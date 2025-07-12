@@ -1,0 +1,928 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>용사 링크 - 젤다의 전설: 왕국의 눈물</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Noto+Sans+KR:wght@300;400;500;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background: linear-gradient(135deg, #1a4c8a 0%, #2d5f3f 50%, #8b4513 100%) fixed;
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+        
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="triforce" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse"><polygon points="10,2 18,16 2,16" fill="rgba(255,215,0,0.1)" stroke="rgba(255,215,0,0.2)" stroke-width="0.5"/></pattern></defs><rect width="100" height="100" fill="url(%23triforce)"/></svg>') repeat;
+            opacity: 0.3;
+            z-index: -999;
+            pointer-events: none;
+        }
+        
+        /* SPA Page System */
+        .page {
+            display: none;
+            opacity: 0;
+            transform: translateY(20px) scale(0.98);
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            background: transparent;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .page.active {
+            display: block;
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+        
+        .page.fade-out {
+            opacity: 0;
+            transform: translateY(-10px) scale(1.02);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .page-container {
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            position: relative;
+        }
+        
+        .title {
+            font-family: 'Cinzel', serif;
+            font-size: 3.5rem;
+            font-weight: 700;
+            color: #ffd700;
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.8);
+            margin-bottom: 10px;
+            position: relative;
+        }
+        
+        .subtitle {
+            font-size: 1.3rem;
+            color: #e6f3ff;
+            font-weight: 300;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.6);
+        }
+        
+        .character-card, .ability-card {
+            background: linear-gradient(145deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255,215,0,0.3);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .character-card::before, .ability-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,215,0,0.1) 0%, transparent 70%);
+            animation: shimmer 6s ease-in-out infinite;
+        }
+        
+        @keyframes shimmer {
+            0%, 100% { transform: rotate(0deg); opacity: 0.5; }
+            50% { transform: rotate(180deg); opacity: 0.8; }
+        }
+        
+        .character-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            align-items: center;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .character-image {
+            text-align: center;
+            position: relative;
+        }
+        
+        .character-portrait {
+            width: 300px;
+            height: 400px;
+            border: 4px solid #ffd700;
+            border-radius: 15px;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.4);
+            position: relative;
+            margin: 0 auto;
+            overflow: hidden;
+        }
+        
+        .character-portrait img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        
+        .character-portrait::after {
+            content: '🗡️';
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 2rem;
+            filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.5));
+        }
+        
+        .character-details h2 {
+            font-family: 'Cinzel', serif;
+            font-size: 2.5rem;
+            color: #ffd700;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.6);
+        }
+        
+        .detail-item {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,215,0,0.2);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+            backdrop-filter: blur(5px);
+        }
+        
+        .detail-label {
+            font-weight: 700;
+            color: #ffd700;
+            font-size: 1.1rem;
+            margin-bottom: 5px;
+        }
+        
+        .detail-value {
+            color: #e6f3ff;
+            font-size: 1rem;
+            line-height: 1.6;
+        }
+        
+        .abilities {
+            margin-top: 40px;
+        }
+        
+        .abilities h3 {
+            font-family: 'Cinzel', serif;
+            font-size: 2rem;
+            color: #ffd700;
+            text-align: center;
+            margin-bottom: 30px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.6);
+        }
+        
+        .ability-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+        
+        .ability-item {
+            background: linear-gradient(145deg, rgba(255,255,255,0.15), rgba(255,255,255,0.05));
+            border: 2px solid rgba(255,215,0,0.3);
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            backdrop-filter: blur(8px);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            cursor: pointer;
+            color: inherit;
+        }
+        
+        .ability-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(255,215,0,0.3);
+        }
+        
+        .ability-icon {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.5));
+        }
+        
+        .ability-name {
+            font-weight: 600;
+            color: #ffd700;
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+        }
+        
+        .ability-desc {
+            color: #e6f3ff;
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+        
+        /* Detail Page Styles */
+        .ability-icon-large {
+            font-size: 5rem;
+            margin-bottom: 20px;
+            filter: drop-shadow(3px 3px 6px rgba(0,0,0,0.5));
+        }
+        
+        .content {
+            position: relative;
+            z-index: 2;
+        }
+        
+        .description {
+            font-size: 1.2rem;
+            line-height: 1.8;
+            color: #e6f3ff;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        
+        .details-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+        
+        .detail-section {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,215,0,0.2);
+            border-radius: 15px;
+            padding: 25px;
+            backdrop-filter: blur(5px);
+        }
+        
+        .section-title {
+            font-family: 'Cinzel', serif;
+            font-size: 1.8rem;
+            color: #ffd700;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        
+        .section-content {
+            color: #e6f3ff;
+            font-size: 1rem;
+            line-height: 1.6;
+        }
+        
+        .tips-section {
+            background: linear-gradient(145deg, rgba(255,215,0,0.1), rgba(255,215,0,0.05));
+            border: 2px solid rgba(255,215,0,0.4);
+            border-radius: 15px;
+            padding: 30px;
+            margin-top: 30px;
+        }
+        
+        .tips-title {
+            font-family: 'Cinzel', serif;
+            font-size: 2rem;
+            color: #ffd700;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .tips-list {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .tips-list li {
+            background: rgba(255,255,255,0.1);
+            margin-bottom: 10px;
+            padding: 15px;
+            border-radius: 8px;
+            color: #e6f3ff;
+            position: relative;
+            padding-left: 50px;
+        }
+        
+        .tips-list li:before {
+            content: '💡';
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 1.2rem;
+        }
+        
+        /* Audio Controls */
+        .audio-controls {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            background: rgba(0,0,0,0.8);
+            border: 2px solid #ffd700;
+            border-radius: 10px;
+            padding: 10px;
+            backdrop-filter: blur(10px);
+            pointer-events: auto;
+        }
+        
+        .audio-button {
+            background: linear-gradient(145deg, #ffd700, #ffed4e);
+            border: none;
+            border-radius: 5px;
+            padding: 8px 12px;
+            color: #000;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            pointer-events: auto;
+            display: block;
+            position: relative;
+            z-index: 10000;
+        }
+        
+        .audio-button:hover {
+            background: linear-gradient(145deg, #ffed4e, #ffd700);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255,215,0,0.4);
+        }
+        
+        /* Back Button */
+        .back-button {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1000;
+            background: rgba(0,0,0,0.7);
+            border: 2px solid #ffd700;
+            border-radius: 10px;
+            padding: 10px 15px;
+            color: #ffd700;
+            text-decoration: none;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            cursor: pointer;
+            display: none;
+        }
+        
+        .back-button.show {
+            display: block;
+        }
+        
+        .back-button:hover {
+            background: rgba(255,215,0,0.2);
+            transform: translateY(-2px);
+        }
+        
+        @media (max-width: 768px) {
+            .character-info {
+                grid-template-columns: 1fr;
+                gap: 30px;
+            }
+            
+            .character-portrait {
+                width: 250px;
+                height: 320px;
+            }
+            
+            .title {
+                font-size: 2.5rem;
+            }
+            
+            .character-details h2 {
+                font-size: 2rem;
+            }
+            
+            .ability-icon-large {
+                font-size: 3rem;
+            }
+            
+            .details-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .audio-controls {
+                top: 10px;
+                right: 10px;
+                padding: 8px;
+            }
+            
+            .audio-button {
+                padding: 6px 10px;
+                font-size: 0.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Persistent Audio Player (exact copy from original) -->
+    <iframe id="youtube-player" 
+            width="1" 
+            height="1" 
+            src="https://www.youtube.com/embed/yaXD4nu7W88?enablejsapi=1&autoplay=0&loop=1&playlist=yaXD4nu7W88&controls=0" 
+            style="position: absolute; left: -9999px; visibility: hidden;"
+            frameborder="0" 
+            allow="autoplay; encrypted-media">
+    </iframe>
+    
+    <!-- Persistent Audio Controls -->
+    <div class="audio-controls">
+        <button class="audio-button" id="musicButton">🎵 음악</button>
+    </div>
+    
+    <!-- Back Button -->
+    <button class="back-button" id="backButton">← 돌아가기</button>
+    
+    <!-- Page Container -->
+    <div class="page-container">
+    
+    <!-- Main Page -->
+    <div id="main-page" class="page active">
+        <div class="container">
+            <header class="header">
+                <h1 class="title">용사 링크</h1>
+                <p class="subtitle">젤다의 전설: 왕국의 눈물</p>
+            </header>
+            
+            <div class="character-card">
+                <div class="character-info">
+                    <div class="character-image">
+                        <div class="character-portrait">
+                            <img src="https://static.wikia.nocookie.net/zelda_gamepedia_en/images/1/15/TotK_Link_Artwork.png" alt="링크 - 젤다의 전설: 왕국의 눈물" onerror="this.style.display='none'; this.parentNode.innerHTML='<div style=\'display:flex;align-items:center;justify-content:center;height:100%;background:linear-gradient(145deg,#4a90e2,#357abd);color:white;font-size:1.2rem;\'>링크 캐릭터 이미지<br>(Hero of Hyrule)</div>';">
+                        </div>
+                    </div>
+                    
+                    <div class="character-details">
+                        <h2>하이랄의 용사</h2>
+                        
+                        <div class="detail-item">
+                            <div class="detail-label">이름</div>
+                            <div class="detail-value">링크 (Link)</div>
+                        </div>
+                        
+                        <div class="detail-item">
+                            <div class="detail-label">출신</div>
+                            <div class="detail-value">하이랄 왕국</div>
+                        </div>
+                        
+                        <div class="detail-item">
+                            <div class="detail-label">무기</div>
+                            <div class="detail-value">마스터 소드, 하이랄 방패</div>
+                        </div>
+                        
+                        <div class="detail-item">
+                            <div class="detail-label">특징</div>
+                            <div class="detail-value">용기의 트라이포스를 지닌 전설의 용사. 하이랄을 구하기 위해 끝없는 모험을 떠나는 영웅.</div>
+                        </div>
+                        
+                        <div class="detail-item">
+                            <div class="detail-label">게임</div>
+                            <div class="detail-value">젤다의 전설: 왕국의 눈물 (2023)</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="abilities">
+                    <h3>특수 능력</h3>
+                    <div class="ability-grid">
+                        <div class="ability-item" onclick="showPage('fuse-page')">
+                            <div class="ability-icon">🔧</div>
+                            <div class="ability-name">퓨즈</div>
+                            <div class="ability-desc">무기와 아이템을 융합하여 새로운 도구를 만드는 능력</div>
+                        </div>
+                        
+                        <div class="ability-item" onclick="showPage('ultrahand-page')">
+                            <div class="ability-icon">🏗️</div>
+                            <div class="ability-name">울트라핸드</div>
+                            <div class="ability-desc">물체를 들어올리고 붙여서 다양한 구조물을 건설하는 능력</div>
+                        </div>
+                        
+                        <div class="ability-item" onclick="showPage('recall-page')">
+                            <div class="ability-icon">⏰</div>
+                            <div class="ability-name">모도레코</div>
+                            <div class="ability-desc">물체의 시간을 되돌려 이전 상태로 복원하는 능력</div>
+                        </div>
+                        
+                        <div class="ability-item" onclick="showPage('ascend-page')">
+                            <div class="ability-icon">👻</div>
+                            <div class="ability-name">통과</div>
+                            <div class="ability-desc">천장을 통과하여 위층으로 이동할 수 있는 능력</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Fuse Page -->
+    <div id="fuse-page" class="page">
+        <div class="container">
+            <header class="header">
+                <div class="ability-icon-large">🔧</div>
+                <h1 class="title">퓨즈</h1>
+                <p class="subtitle">무기와 아이템 융합 능력</p>
+            </header>
+            
+            <div class="ability-card">
+                <div class="content">
+                    <p class="description">
+                        퓨즈는 링크가 무기나 방패에 다양한 아이템을 융합하여 새로운 성능의 도구를 만들어내는 혁신적인 능력입니다. 
+                        이 능력을 통해 평범한 나뭇가지도 강력한 무기로 변신시킬 수 있으며, 창의적인 조합으로 예상치 못한 효과를 얻을 수 있습니다.
+                    </p>
+                    
+                    <div class="details-grid">
+                        <div class="detail-section">
+                            <h3 class="section-title">기본 사용법</h3>
+                            <div class="section-content">
+                                <p>1. L 버튼을 눌러 퓨즈 능력 활성화</p>
+                                <p>2. 융합할 무기나 방패 선택</p>
+                                <p>3. 융합할 아이템이나 오브젝트 선택</p>
+                                <p>4. A 버튼으로 융합 실행</p>
+                                <br>
+                                <p>융합된 무기는 공격력이 증가하고 특수 효과를 가지게 됩니다.</p>
+                            </div>
+                        </div>
+                        
+                        <div class="detail-section">
+                            <h3 class="section-title">융합 효과</h3>
+                            <div class="section-content">
+                                <p><strong>공격력 증가:</strong> 융합된 아이템에 따라 무기의 데미지가 대폭 상승</p>
+                                <br>
+                                <p><strong>특수 효과:</strong> 아이템별 고유한 추가 효과 발생</p>
+                                <br>
+                                <p><strong>내구성:</strong> 융합된 무기는 일반 무기보다 오래 사용 가능</p>
+                                <br>
+                                <p><strong>다양성:</strong> 상황에 맞는 다양한 무기 조합 가능</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="tips-section">
+                <h3 class="tips-title">퓨즈 활용 팁</h3>
+                <ul class="tips-list">
+                    <li>몬스터의 뿔이나 이빨은 높은 공격력 보너스를 제공합니다</li>
+                    <li>폭탄꽃, 얼음 에미터 등은 속성 공격을 가능하게 합니다</li>
+                    <li>방패에 가시나 날카로운 물체를 융합하면 방어 시 반격 데미지를 줄 수 있습니다</li>
+                    <li>화살에 다양한 아이템을 융합하여 특수 화살을 만들 수 있습니다</li>
+                    <li>융합된 무기가 부러져도 융합 재료는 다시 회수할 수 있습니다</li>
+                    <li>같은 재료라도 무기 종류에 따라 다른 효과를 낼 수 있습니다</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Ultrahand Page -->
+    <div id="ultrahand-page" class="page">
+        <div class="container">
+            <header class="header">
+                <div class="ability-icon-large">🏗️</div>
+                <h1 class="title">울트라핸드</h1>
+                <p class="subtitle">물체 조작 및 건설 능력</p>
+            </header>
+            
+            <div class="ability-card">
+                <div class="content">
+                    <p class="description">
+                        울트라핸드는 링크가 멀리 떨어진 물체를 자유자재로 들어올리고, 이동시키고, 회전시키며, 
+                        다른 물체에 붙여서 복잡한 구조물을 만들어낼 수 있는 강력한 능력입니다. 
+                        이 능력으로 다리를 만들고, 탈것을 조립하고, 퍼즐을 해결할 수 있습니다.
+                    </p>
+                    
+                    <div class="details-grid">
+                        <div class="detail-section">
+                            <h3 class="section-title">기본 기능</h3>
+                            <div class="section-content">
+                                <p><strong>물체 선택:</strong> 주변의 이동 가능한 물체를 선택</p>
+                                <br>
+                                <p><strong>이동 및 회전:</strong> 선택한 물체를 3차원으로 자유롭게 조작</p>
+                                <br>
+                                <p><strong>부착:</strong> 다른 물체에 단단히 고정</p>
+                                <br>
+                                <p><strong>분리:</strong> 이미 붙어있는 물체들을 분리</p>
+                                <br>
+                                <p><strong>거리 제한:</strong> 일정 거리 내의 물체만 조작 가능</p>
+                            </div>
+                        </div>
+                        
+                        <div class="detail-section">
+                            <h3 class="section-title">활용 분야</h3>
+                            <div class="section-content">
+                                <p><strong>교통수단 제작:</strong> 뗏목, 비행기, 자동차 등 조립</p>
+                                <br>
+                                <p><strong>건축:</strong> 다리, 계단, 플랫폼 건설</p>
+                                <br>
+                                <p><strong>퍼즐 해결:</strong> 복잡한 구조물 퍼즐 해결</p>
+                                <br>
+                                <p><strong>전투 지원:</strong> 방어 구조물이나 공격 장치 제작</p>
+                                <br>
+                                <p><strong>탐험 도구:</strong> 높은 곳 도달을 위한 구조물 제작</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="tips-section">
+                <h3 class="tips-title">울트라핸드 활용 팁</h3>
+                <ul class="tips-list">
+                    <li>무거운 물체일수록 이동 속도가 느려지니 적절한 크기의 재료를 선택하세요</li>
+                    <li>물체를 부착할 때는 접촉면이 넓을수록 더 안정적으로 고정됩니다</li>
+                    <li>회전 기능을 활용하여 정확한 각도로 물체를 배치할 수 있습니다</li>
+                    <li>같은 재료라도 배치 방향에 따라 다른 효과를 낼 수 있습니다</li>
+                    <li>복잡한 구조물을 만들 때는 기초부터 차근차근 쌓아올리세요</li>
+                    <li>물리 법칙을 고려하여 균형잡힌 구조물을 만드는 것이 중요합니다</li>
+                    <li>조나이 디바이스들을 적극 활용하면 더 창의적인 발명품을 만들 수 있습니다</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recall Page -->
+    <div id="recall-page" class="page">
+        <div class="container">
+            <header class="header">
+                <div class="ability-icon-large">⏰</div>
+                <h1 class="title">모도레코</h1>
+                <p class="subtitle">시간 역행 능력</p>
+            </header>
+            
+            <div class="ability-card">
+                <div class="content">
+                    <p class="description">
+                        모도레코는 링크가 물체의 시간을 되돌려 이전 상태나 위치로 복원시킬 수 있는 신비로운 능력입니다. 
+                        떨어진 바위를 다시 올리고, 움직였던 플랫폼을 원래 자리로 되돌리며, 
+                        시간의 흐름을 역행시켜 다양한 퍼즐과 상황을 해결할 수 있습니다.
+                    </p>
+                    
+                    <div class="details-grid">
+                        <div class="detail-section">
+                            <h3 class="section-title">능력 원리</h3>
+                            <div class="section-content">
+                                <p><strong>시간 추적:</strong> 물체의 이동 경로와 상태 변화를 기록</p>
+                                <br>
+                                <p><strong>역행 재생:</strong> 기록된 시간을 거꾸로 재생하여 복원</p>
+                                <br>
+                                <p><strong>제한 시간:</strong> 최대 몇 분 전까지의 상태로만 복원 가능</p>
+                                <br>
+                                <p><strong>대상 선택:</strong> 특정 물체만 선택적으로 시간 역행</p>
+                                <br>
+                                <p><strong>물리 법칙:</strong> 복원된 물체는 실제 물리적 영향을 미침</p>
+                            </div>
+                        </div>
+                        
+                        <div class="detail-section">
+                            <h3 class="section-title">활용 상황</h3>
+                            <div class="section-content">
+                                <p><strong>떨어진 바위:</strong> 절벽에서 떨어진 큰 바위를 다시 원래 위치로 복원</p>
+                                <br>
+                                <p><strong>움직인 플랫폼:</strong> 스위치로 작동한 플랫폼을 원래 위치로 되돌리기</p>
+                                <br>
+                                <p><strong>파괴된 구조물:</strong> 무너진 다리나 벽을 파괴 이전 상태로 복원</p>
+                                <br>
+                                <p><strong>적의 투사체:</strong> 적이 던진 바위나 무기를 되돌려 역공격에 활용</p>
+                                <br>
+                                <p><strong>운송 수단:</strong> 지나간 배나 이동 플랫폼을 되돌려 탑승</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="tips-section">
+                <h3 class="tips-title">모도레코 활용 팁</h3>
+                <ul class="tips-list">
+                    <li>물체의 궤적을 주의깊게 관찰하여 최적의 복원 시점을 찾으세요</li>
+                    <li>큰 물체일수록 더 강력한 충격을 주므로 전투에서도 유용합니다</li>
+                    <li>시간이 오래 지난 물체는 역행 범위가 제한되니 빠른 판단이 중요합니다</li>
+                    <li>복원된 물체의 운동량을 이용해 다른 물체를 밀어낼 수 있습니다</li>
+                    <li>여러 물체를 순서대로 복원하여 연쇄 반응을 만들어보세요</li>
+                    <li>물 속에서도 사용 가능하므로 수중 퍼즐에서도 활용하세요</li>
+                    <li>조나이 디바이스와 조합하면 더욱 창의적인 해결책을 찾을 수 있습니다</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Ascend Page -->
+    <div id="ascend-page" class="page">
+        <div class="container">
+            <header class="header">
+                <div class="ability-icon-large">👻</div>
+                <h1 class="title">통과</h1>
+                <p class="subtitle">천장 관통 이동 능력</p>
+            </header>
+            
+            <div class="ability-card">
+                <div class="content">
+                    <p class="description">
+                        통과는 링크가 고체 천장이나 플랫폼을 마치 유령처럼 관통하여 위층으로 순간이동할 수 있는 신비로운 능력입니다. 
+                        복잡한 구조물이나 높은 절벽을 우회하지 않고도 직접적으로 상층부에 도달할 수 있어 
+                        탐험과 퍼즐 해결에 혁명적인 변화를 가져다줍니다.
+                    </p>
+                    
+                    <div class="details-grid">
+                        <div class="detail-section">
+                            <h3 class="section-title">능력 메커니즘</h3>
+                            <div class="section-content">
+                                <p><strong>관통 대상:</strong> 고체 천장, 플랫폼, 바닥면</p>
+                                <br>
+                                <p><strong>이동 방향:</strong> 수직 상승만 가능 (아래로는 불가)</p>
+                                <br>
+                                <p><strong>도달 지점:</strong> 천장 바로 위의 표면에 출현</p>
+                                <br>
+                                <p><strong>즉시 발동:</strong> 능력 사용 시 즉시 이동 완료</p>
+                                <br>
+                                <p><strong>안전 보장:</strong> 위험한 곳에는 이동하지 않음</p>
+                            </div>
+                        </div>
+                        
+                        <div class="detail-section">
+                            <h3 class="section-title">활용 상황</h3>
+                            <div class="section-content">
+                                <p><strong>건물 탐험:</strong> 다층 건물에서 층간 이동을 위한 빠른 상층 이동</p>
+                                <br>
+                                <p><strong>절벽 등반:</strong> 가파른 절벽이나 동굴의 윗부분으로 직접 이동</p>
+                                <br>
+                                <p><strong>퍼즐 해결:</strong> 복잡한 메커니즘을 우회하여 핵심 부분에 직접 접근</p>
+                                <br>
+                                <p><strong>전투 회피:</strong> 적들이 많은 아래층에서 안전한 위층으로 이동</p>
+                                <br>
+                                <p><strong>보물 획득:</strong> 접근하기 어려운 위치의 보물에 쉽게 도달</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="tips-section">
+                <h3 class="tips-title">통과 능력 활용 팁</h3>
+                <ul class="tips-list">
+                    <li>능력 사용 전에 위층의 상황을 미리 파악해두면 더 안전합니다</li>
+                    <li>좁은 공간에서도 사용 가능하므로 동굴이나 터널에서 유용합니다</li>
+                    <li>다른 능력들과 조합하여 창의적인 이동 경로를 만들어보세요</li>
+                    <li>적의 시야에서 벗어나기 위한 긴급 탈출 수단으로 활용하세요</li>
+                    <li>수직 구조가 복잡한 신전에서 특히 유용한 능력입니다</li>
+                    <li>물 속에서도 사용 가능하므로 수중 탐험 시 적극 활용하세요</li>
+                    <li>때로는 정면 돌파보다 통과를 통한 우회가 더 효율적일 수 있습니다</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    </div> <!-- End page-container -->
+
+    <script>
+        let isPlaying = false;
+        let iframe;
+        let currentPage = 'main-page';
+        
+        // Page Navigation with smooth animations and scroll to top
+        function showPage(pageId) {
+            const currentPageElement = document.getElementById(currentPage);
+            const newPageElement = document.getElementById(pageId);
+            
+            if (!newPageElement || currentPage === pageId) return;
+            
+            // Scroll to top smoothly
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+            
+            // Add fade-out class to current page
+            if (currentPageElement) {
+                currentPageElement.classList.add('fade-out');
+                
+                // Wait for fade-out animation to complete
+                setTimeout(() => {
+                    currentPageElement.classList.remove('active', 'fade-out');
+                }, 300);
+            }
+            
+            // Show new page with fade-in animation
+            setTimeout(() => {
+                newPageElement.classList.add('active');
+                currentPage = pageId;
+                
+                // Show/hide back button
+                const backButton = document.getElementById('backButton');
+                if (pageId === 'main-page') {
+                    backButton.classList.remove('show');
+                } else {
+                    backButton.classList.add('show');
+                }
+                
+                // Update URL hash
+                history.pushState({page: pageId}, '', `#${pageId}`);
+            }, 150);
+        }
+        
+        function goBack() {
+            showPage('main-page');
+        }
+        
+        // Music Controls (exact copy from original)
+        function toggleMusic() {
+            console.log('toggleMusic called');
+            const button = document.getElementById('musicButton');
+            iframe = document.getElementById('youtube-player');
+            
+            if (!iframe) {
+                console.log('iframe not found');
+                return;
+            }
+            
+            try {
+                if (isPlaying) {
+                    // iframe URL 변경으로 일시정지
+                    const currentSrc = iframe.src;
+                    iframe.src = currentSrc.replace('autoplay=1', 'autoplay=0');
+                    button.textContent = '🎵 음악';
+                    button.style.opacity = '0.7';
+                    isPlaying = false;
+                    console.log('Music paused');
+                } else {
+                    // iframe URL 변경으로 자동재생
+                    let newSrc = iframe.src.replace('autoplay=0', 'autoplay=1');
+                    // 시간 파라미터 추가로 강제 리로드
+                    newSrc += '&t=' + Date.now();
+                    iframe.src = newSrc;
+                    button.textContent = '🔇 정지';
+                    button.style.opacity = '1';
+                    isPlaying = true;
+                    console.log('Music playing');
+                }
+            } catch (error) {
+                console.error('Error playing/pausing:', error);
+                button.textContent = '❌ 오류';
+            }
+        }
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            const button = document.getElementById('musicButton');
+            const backButton = document.getElementById('backButton');
+            
+            if (button) {
+                button.addEventListener('click', toggleMusic);
+                console.log('Button event listener added');
+            }
+            
+            if (backButton) {
+                backButton.addEventListener('click', goBack);
+            }
+            
+            // Handle initial hash
+            if (window.location.hash) {
+                const pageId = window.location.hash.substring(1);
+                if (document.getElementById(pageId)) {
+                    showPage(pageId);
+                }
+            }
+        });
+        
+        // Handle browser back/forward
+        window.addEventListener('popstate', function(e) {
+            if (e.state && e.state.page) {
+                const pageElement = document.getElementById(e.state.page);
+                if (pageElement) {
+                    showPage(e.state.page);
+                }
+            } else {
+                showPage('main-page');
+            }
+        });
+        
+        // Auto-start music (exact copy from original)
+        document.addEventListener('click', function(e) {
+            if (!isPlaying && e.target.id !== 'musicButton') {
+                toggleMusic();
+            }
+        }, { once: true });
+    </script>
+</body>
+</html>
